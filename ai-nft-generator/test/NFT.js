@@ -29,12 +29,12 @@ describe('NFT', () => {
 
   describe('Deployment', () => {
     it('Returns owner', async () => {
-      const result = await nft.owner()
+      const result = await nft.s_owner()
       expect(result).to.be.equal(deployer.address)
     })
 
     it('Returns cost', async () => {
-      const result = await nft.cost()
+      const result = await nft.i_cost()
       expect(result).to.be.equal(COST)
     })
   })

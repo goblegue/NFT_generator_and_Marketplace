@@ -9,20 +9,20 @@ contract NFT is ERC721URIStorage {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
-    address public owner;
-    uint256 public cost;
+    address public s_owner;
+    uint256 public immutable i_cost;
 
     constructor(
         string memory _name,
         string memory _symbol,
         uint256 _cost
     ) ERC721(_name, _symbol) {
-        owner = msg.sender;
-        cost = _cost;
+        s_owner = msg.sender;
+        i_cost = _cost;
     }
 
     function mint(string memory tokenURI) public payable {
-        require(msg.value >= cost);
+        require(msg.value >= i_cost);
 
         _tokenIds.increment();
 
@@ -36,8 +36,8 @@ contract NFT is ERC721URIStorage {
     }
 
     function withdraw() public {
-        require(msg.sender == owner);
-        (bool success, ) = owner.call{value: address(this).balance}("");
+        require(msg.sender == s_owner);
+        (bool success, ) = s_owner.call{value: address(this).balance}("");
         require(success);
     }
 }
