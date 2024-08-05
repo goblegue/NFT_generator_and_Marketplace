@@ -19,6 +19,7 @@ function App() {
   const [account, setAccount] = useState(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [url, setUrl] = useState("");
   const [image, setImage] = useState(null);
 
   const loadBlockchainData = async () => {
@@ -57,9 +58,29 @@ function App() {
     const data = response.data;
 
     const base64data = Buffer.from(data).toString("base64");
-    const img = 'data:${type};base64,' + base64data;
+    const img = "data:${type};base64," + base64data;
     setImage(img);
-    return data; 
+    return data;
+  };
+
+  const uploadImage = async (imageData) => {
+    console.log("Uploading Image...");
+
+    const nftstorage = new NFTStorage({
+      token: process.env.REACT_APP_NFT_STORAGE_API_KEY,
+    });
+
+    const { ipfs } = await nftstorage.store({
+      image: new File([imageData], "image.jpg", { type: "image/jpg" }),
+      name: name,
+      description: description,
+    });
+
+    const url = `https://ipfs.io/ipfs/${ipfs}/metadata.json`;
+    setUrl(url);
+
+    return url; 
+
   };
 
   useEffect(() => {
