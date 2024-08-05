@@ -29,38 +29,38 @@ function App() {
   const submitHandler = async (e) => {
     e.preventDefault();
 
-    // const imageData = createImage();
+    const imageData = createImage();
   };
 
-  // const createImage = async () => {
-  //   console.log("Generating Image...");
+  const createImage = async () => {
+    console.log("Generating Image...");
 
-  //   // You can replace this with different model API's
-  //   const URL = `https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-3-medium-diffusers`;
+    // You can replace this with different model API's
+    const URL = `https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-3-medium-diffusers`;
 
     // Send the request
-  //   const response = await axios({
-  //     url: URL,
-  //     method: "POST",
-  //     headers: {
-  //       Authorization: `Bearer ${process.env.REACT_APP_HUGGING_FACE_API_KEY}`,
-  //       Accept: "application/json",
-  //       "Content-Type": "application/json",
-  //     },
-  //     data: JSON.stringify({
-  //       inputs: description,
-  //       options: { wait_for_model: true },
-  //     }),
-  //     responseType: "arraybuffer",
-  //   });
-  //   const type = response.headers["content-type"];
-  //   const data = response.data;
+    const response = await axios({
+      url: URL,
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.REACT_APP_HUGGING_FACE_API_KEY}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({
+        inputs: description,
+        options: { wait_for_model: true },
+      }),
+      responseType: "arraybuffer",
+    });
+    const type = response.headers["content-type"];
+    const data = response.data;
 
-  //   const base64data = Buffer.from(data).toString("base64");
-  //   const img = 'data:${type};base64,' + base64data;
-  //   setImage(img);
-  //   return data; 
-  // };
+    const base64data = Buffer.from(data).toString("base64");
+    const img = 'data:${type};base64,' + base64data;
+    setImage(img);
+    return data; 
+  };
 
   useEffect(() => {
     loadBlockchainData();
