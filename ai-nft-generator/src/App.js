@@ -8,18 +8,32 @@ import axios from "axios";
 import Spinner from "react-bootstrap/Spinner";
 import Navigation from "./components/Navigation";
 
+
 // ABIs
 import NFT from "./abis/NFT.json";
 
 // Config
 import config from "./config.json";
 
+// Utils
+
+import createGroup from "./utils/CreateGroup.js";
+
 function App() {
+  // const PINATA_API_KEY = process.env.REACT_APP_PINATA_API_KEY;
+  // const PINATA_SECRET_API_KEY = process.env.REACT_APP_PINATA_SECRET_API_KEY;
+
+  const PINATA_API_KEY = process.env.REACT_APP_PINATA_API_KEY;
+  const PINATA_SECRET_API_KEY = process.env.REACT_APP_PINATA_SECRET_API_KEY;
+  const HUGGING_FACE_API_KEY = process.env.REACT_APP_HUGGING_FACE_API_KEY;
+  const PINATA_JWT = process.env.REACT_APP_PINATA_JWT;
+
   const [provider, setProvider] = useState(null);
   const [account, setAccount] = useState(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [url, setUrl] = useState("");
+  const [groupData, setGroupData] = useState(null);
   const [image, setImage] = useState(null);
 
   const loadBlockchainData = async () => {
@@ -27,10 +41,23 @@ function App() {
     setProvider(provider);
   };
 
+
   const submitHandler = async (e) => {
     e.preventDefault();
+    try {
+      const imageData = await createImage();
+      const NFTMetaDataCID = await uploadNFTMetaData(imageData, name,description);
 
-    const imageData = createImage();
+      // Set the IPFS URL
+      const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${(NFTMetaDataCID)}`;
+      
+
+      console.log("Image uploaded to IPFS:", ipfsUrl);
+
+      // Here you can add additional logic, like minting an NFT with this IPFS URL
+    } catch (error) {
+      console.error("Error in submit handler:", error);
+    }
   };
 
   const createImage = async () => {
@@ -54,37 +81,99 @@ function App() {
       }),
       responseType: "arraybuffer",
     });
+
     const type = response.headers["content-type"];
     const data = response.data;
 
     const base64data = Buffer.from(data).toString("base64");
-    const img = "data:${type};base64," + base64data;
+    const img = `data:${type};base64,` + base64data;
     setImage(img);
-    return data;
+
+    return img;
   };
 
-  const uploadImage = async (imageData) => {
-    console.log("Uploading Image...");
+  const uploadImageToIPFS = async (imageData, name) => {
+    console.log("Uploading to IPFS...");
 
-    const nftstorage = new NFTStorage({
-      token: process.env.REACT_APP_NFT_STORAGE_API_KEY,
-    });
+    try {
+      // Convert base64 image to blob
+      const blob = await fetch(imageData).then((res) => res.blob());
 
-    const { ipfs } = await nftstorage.store({
-      image: new File([imageData], "image.jpg", { type: "image/jpg" }),
-      name: name,
-      description: description,
-    });
+      // Create form data
+      const formData = new FormData();
+      formData.append("file", blob, "image.png");
 
-    const url = `https://ipfs.io/ipfs/${ipfs}/metadata.json`;
-    setUrl(url);
+      // Prepare metadata
+      const metadata = JSON.stringify({
+        name: name,
+      });
+      formData.append("pinataMetadata", metadata);
+      
+      // Pinata API endpoint
+      const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
 
-    return url; 
+      // Send request to Pinata
+      const response = await axios.post(url, formData, {
+        maxBodyLength: "Infinity",
+        headers: {
+          "Content-Type": `multipart/form-data; boundary=${formData._boundary}`,
+          Authorization: `Bearer ${process.env.REACT_APP_PINATA_JWT}`,
+        },
+      });
 
+
+      return response.data.IpfsHash;
+    } catch (error) {
+      console.error("Error uploading to IPFS:", error);
+      throw error;
+    }
   };
+
+  const uploadNFTMetaData = async (imageData, name, description) =>{
+    const imageCID = await uploadImageToIPFS(imageData, name);
+
+    const jsonData = JSON.stringify({
+      pinataContent: {
+        name: name,
+        description: description,
+        image: `ipfs://${imageCID}`,
+        external_url: `https://pinata.cloud`,
+      },
+       pinataMetadata:{
+        name: name,
+       },
+       pinataOptions:{
+        groupId: groupData.id
+       }
+      }
+  );
+  try {
+    const uploadRes = await axios.post(
+      "https://api.pinata.cloud/pinning/pinJSONToIPFS",
+      jsonData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${PINATA_JWT}`,
+        },
+      }
+    );
+
+
+    return(uploadRes.data.IpfsHash);
+  } catch (error) {
+    console.error(error);
+  }
+
+  }
 
   useEffect(() => {
-    loadBlockchainData();
+    const init = async () => {
+      await loadBlockchainData();
+      const groupData = await createGroup(); // Execute the script at startup and get group data
+      setGroupData(groupData); // Store the group ID
+    };
+    init();
   }, []);
 
   return (
@@ -114,7 +203,7 @@ function App() {
       </div>
       <p>
         View&nbsp;
-        <a href="" target="_blank" rel="noreferrer">
+        <a href={url} target="_blank" rel="noreferrer">
           Metadata
         </a>
       </p>
