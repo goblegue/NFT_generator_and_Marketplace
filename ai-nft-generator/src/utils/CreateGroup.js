@@ -1,7 +1,6 @@
 import  axios from 'axios';
 
-const createGroup = async () => {
-  const PINATA_JWT = process.env.REACT_APP_PINATA_JWT;
+const createGroup = async () => {  const PINATA_JWT = process.env.REACT_APP_PINATA_JWT;
 
   const groupData = {
     name: "AI NFT Collection",
@@ -18,8 +17,8 @@ const createGroup = async () => {
         },
       }
     );
-
     return(createGroupRes.data);
+    
   } catch (error) {
     console.error(error);
   }
